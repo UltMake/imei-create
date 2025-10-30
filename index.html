@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMEI码生成器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        dark: '#1D2129',
+                        light: '#F2F3F5',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+
+            .btn-primary {
+                @apply bg-primary text-white px-4 py-2 rounded-lg transition-all duration-300 hover:bg-primary/90 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/50;
+            }
+
+            .btn-secondary {
+                @apply bg-white text-primary border border-primary px-4 py-2 rounded-lg transition-all duration-300 hover:bg-primary/5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/50;
+            }
+
+            .input-error {
+                @apply border-danger focus:ring-danger/20;
+            }
+
+            .validation-success {
+                @apply text-success;
+            }
+
+            .validation-error {
+                @apply text-danger;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-dark min-h-screen">
+<!-- 导航栏 -->
+<header class="bg-white shadow-sm sticky top-0 z-50 transition-all duration-300">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <i class="fa fa-mobile text-3xl text-primary"></i>
+            <h1 class="text-xl md:text-2xl font-bold text-primary">IMEI码生成器</h1>
+        </div>
+        <nav class="hidden md:flex space-x-6">
+            <a href="#generator" class="text-gray-600 hover:text-primary transition-colors">生成器</a>
+            <a href="#about" class="text-gray-600 hover:text-primary transition-colors">关于IMEI</a>
+            <a href="#faq" class="text-gray-600 hover:text-primary transition-colors">常见问题</a>
+        </nav>
+        <button class="md:hidden text-gray-600" id="mobileMenuBtn">
+            <i class="fa fa-bars text-xl"></i>
+        </button>
+    </div>
+    <!-- 移动端菜单 -->
+    <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-gray-100">
+        <div class="container mx-auto px-4 py-2 flex flex-col space-y-3">
+            <a href="#generator" class="py-2 text-gray-600 hover:text-primary transition-colors">生成器</a>
+            <a href="#about" class="py-2 text-gray-600 hover:text-primary transition-colors">关于IMEI</a>
+            <a href="#faq" class="py-2 text-gray-600 hover:text-primary transition-colors">常见问题</a>
+        </div>
+    </div>
+</header>
+
+<main class="container mx-auto px-4 py-8">
+    <section class="text-center mb-12 py-8">
+        <h2 class="text-[clamp(1.8rem,4vw,2.8rem)] font-bold mb-4 text-dark text-shadow">
+            专业的IMEI码生成工具
+        </h2>
+        <p class="text-gray-600 max-w-2xl mx-auto text-[clamp(1rem,2vw,1.1rem)]">
+            支持多种生成模式，包括基于现有IMEI码生成新码，满足您的测试和开发需求
+        </p>
+    </section>
+
+    <!-- 生成器区域 -->
+    <section id="generator" class="bg-white rounded-xl shadow-md p-6 md:p-8 mb-12 card-hover">
+        <h3 class="text-xl md:text-2xl font-bold mb-6 text-primary">IMEI码生成</h3>
+
+        <!-- 生成模式选择 -->
+        <div class="mb-6">
+            <label class="block text-gray-700 mb-3">生成模式:</label>
+            <div class="grid md:grid-cols-2 gap-y-3">
+                <label class="flex items-center">
+                    <input type="radio" name="generateMode" value="randomAll" class="mr-2 text-primary" checked>
+                    <span>完全随机生成</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="radio" name="generateMode" value="customTac" class="mr-2 text-primary">
+                    <span>自定义TAC码，随机FAC码</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="radio" name="generateMode" value="customTacFac" class="mr-2 text-primary">
+                    <span>同时自定义TAC和FAC码</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="radio" name="generateMode" value="basedOnImei" class="mr-2 text-primary">
+                    <span>基于现有IMEI码生成</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 自定义TAC码设置区域 (仅自定义TAC) -->
+        <div id="customTacSettings" class="mb-6 hidden">
+            <label class="block text-gray-700 mb-2">TAC码设置 (前6位):</label>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="flex items-center mb-2">
+                        <input type="radio" name="tacMode" value="presetTac" class="mr-2 text-primary" checked>
+                        <span>使用预设TAC码</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="tacMode" value="manualTac" class="mr-2 text-primary">
+                        <span>手动输入TAC码</span>
+                    </label>
+                </div>
+
+                <div>
+                    <!-- 预设TAC码选择 -->
+                    <div id="presetTacContainer">
+                        <label for="presetTac" class="block text-sm text-gray-600 mb-1">选择预设TAC码 (6位):</label>
+                        <select id="presetTac"
+                                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="864797">864797 - 阿乐卡MF650 A</option>
+                            <option value="863018">863018 - 阿乐卡MF650 B</option>
+                            <option value="862785">862785 - 烽火5G CPE Pro</option>
+                            <option value="863551">863551 - 飞猫U20</option>
+                            <option value="864679">864679 - 飞猫M1(803E)</option>
+                            <option value="865553">865553 - 格行慢充充电宝4G/信翼</option>
+                            <option value="868521">868521 - 格行快充充电宝4G</option>
+                            <option value="862385">862385 - 格行MT700</option>
+                            <option value="863073">863073 - 海尔MF761W</option>
+                            <option value="860756">860756 - 华为智选381</option>
+                            <option value="869686">869686 - 华为E6888</option>
+                            <option value="864628">864628 - 京东云彩屏</option>
+                            <option value="861464">861464 - 鲲鹏C8</option>
+                            <option value="863780">863780 - 莱普小圆墩</option>
+                            <option value="864004">864004 - 纽曼电池机4G</option>
+                            <option value="866576">866576 - 品速R106</option>
+                            <option value="862129">862129 - 影腾Y系列</option>
+                            <option value="867517">867517 - 迅优A</option>
+                            <option value="821223">821223 - 迅优B</option>
+                            <option value="867517">867517 - 迅优C</option>
+                            <option value="865060">865060 - yoze冷门设备A</option>
+                            <option value="865553">865553 - yoze冷门设备A</option>
+                            <option value="865406">865406 - yoze冷门设备B</option>
+                            <option value="860325">860325 - 中兴U30Air</option>
+                            <option value="866005">866005 - 中兴U60Pro</option>
+                            <option value="866183">866183 - 中兴M3</option>
+                            <option value="869338">869338 - 中兴G5ts</option>
+                            <option value="867306">867306 - 中兴F50</option>
+                            <option value="862232">862232 - 中兴F30A Pro</option>
+                            <option value="862710">862710 - 中兴F31 Pro</option>
+                            <option value="861199">861199 - 中兴F32 Pro</option>
+                            <option value="867287">867287 - 中兴U10S</option>
+                            <option value="869500">869500 - 中兴U10L</option>
+                            <option value="860498">860498 - 中兴MF936</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">FAC码将随机生成</p>
+                    </div>
+
+                    <!-- 手动输入TAC码 -->
+                    <div id="manualTacContainer" class="hidden">
+                        <label for="manualTacOnly" class="block text-sm text-gray-600 mb-1">TAC码 (6位数字):</label>
+                        <input
+                                type="text"
+                                id="manualTacOnly"
+                                maxlength="6"
+                                placeholder="例如: 359254"
+                                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        >
+                        <p id="tacOnlyError" class="text-danger text-xs mt-1 hidden">请输入6位数字</p>
+                        <p class="text-xs text-gray-500 mt-1">FAC码将随机生成</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 同时自定义TAC和FAC码设置区域 -->
+        <div id="customTacFacSettings" class="mb-6 hidden">
+            <label class="block text-gray-700 mb-2">TAC和FAC码设置 (前8位):</label>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="flex items-center mb-2">
+                        <input type="radio" name="tacFacMode" value="presetTacFac" class="mr-2 text-primary" checked>
+                        <span>使用预设TAC+FAC组合</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="tacFacMode" value="manualTacFac" class="mr-2 text-primary">
+                        <span>手动输入TAC和FAC码</span>
+                    </label>
+                </div>
+
+                <div>
+                    <!-- 预设TAC+FAC选择 -->
+                    <div id="presetTacFacContainer">
+                        <label for="presetTacFac" class="block text-sm text-gray-600 mb-1">选择预设TAC+FAC组合
+                            (8位):</label>
+                        <select id="presetTacFac"
+                                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="86479707">86479707 - 阿乐卡MF650 A</option>
+                            <option value="86301807">86301807 - 阿乐卡MF650 B</option>
+                            <option value="86278507">86278507 - 烽火5G CPE Pro</option>
+                            <option value="86355107">86355107 - 飞猫U20</option>
+                            <option value="86467907">86467907 - 飞猫M1(803E)</option>
+                            <option value="86555307">86555307 - 格行慢充充电宝4G/信翼</option>
+                            <option value="86852107">86852107 - 格行快充充电宝4G</option>
+                            <option value="86238506">86238506 - 格行MT700</option>
+                            <option value="86307306">86307306 - 海尔MF761W</option>
+                            <option value="86075606">86075606 - 华为智选381</option>
+                            <option value="86968607">86968607 - 华为E6888</option>
+                            <option value="86462804">86462804 - 京东云彩屏</option>
+                            <option value="86146406">86146406 - 鲲鹏C8</option>
+                            <option value="86378007">86378007 - 莱普小圆墩</option>
+                            <option value="86400407">86400407 - 纽曼电池机4G</option>
+                            <option value="86657606">86657606 - 品速R106</option>
+                            <option value="86212907">86212907 - 影腾Y系列</option>
+                            <option value="86751706">86751706 - 迅优A</option>
+                            <option value="82122326">82122326 - 迅优B</option>
+                            <option value="86751728">86751728 - 迅优C</option>
+                            <option value="86506054">86506054 - yoze冷门设备A</option>
+                            <option value="86555307">86555307 - yoze冷门设备A</option>
+                            <option value="86540605">86540605 - yoze冷门设备B</option>
+                            <option value="86032507">86032507 - 中兴U30Air</option>
+                            <option value="86600507">86600507 - 中兴U60Pro</option>
+                            <option value="86618307">86618307 - 中兴M3</option>
+                            <option value="86933807">86933807 - 中兴G5ts</option>
+                            <option value="86730606">86730606 - 中兴F50</option>
+                            <option value="86223207">86223207 - 中兴F30A Pro</option>
+                            <option value="86271007">86271007 - 中兴F31 Pro</option>
+                            <option value="86119907">86119907 - 中兴F32 Pro</option>
+                            <option value="86728707">86728707 - 中兴U10S</option>
+                            <option value="86950007">86950007 - 中兴U10L</option>
+                            <option value="86049807">86049807 - 中兴MF936</option>
+                        </select>
+                    </div>
+
+                    <!-- 手动输入TAC和FAC码 -->
+                    <div id="manualTacFacContainer" class="hidden">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="manualTac" class="block text-sm text-gray-600 mb-1">TAC码 (6位数字):</label>
+                                <input
+                                        type="text"
+                                        id="manualTac"
+                                        maxlength="6"
+                                        placeholder="例如: 359254"
+                                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                >
+                                <p id="tacError" class="text-danger text-xs mt-1 hidden">请输入6位数字</p>
+                            </div>
+                            <div>
+                                <label for="manualFac" class="block text-sm text-gray-600 mb-1">FAC码 (2位数字):</label>
+                                <input
+                                        type="text"
+                                        id="manualFac"
+                                        maxlength="2"
+                                        placeholder="例如: 06"
+                                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                >
+                                <p id="facError" class="text-danger text-xs mt-1 hidden">请输入2位数字</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">TAC+FAC共8位，将作为IMEI码的前8位</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 基于现有IMEI码生成的设置区域 -->
+        <div id="basedOnImeiSettings" class="mb-6 hidden">
+            <label for="baseImei" class="block text-gray-700 mb-2">
+                输入基础IMEI码:
+                <span class="text-sm text-gray-500 ml-2">(将基于此IMEI的结构生成新码)</span>
+            </label>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input
+                        type="text"
+                        id="baseImei"
+                        placeholder="例如: 359254061234567 或 359254 06 123456 7"
+                        class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                <button id="validateImeiBtn" class="btn-secondary whitespace-nowrap">
+                    <i class="fa fa-check mr-1"></i> 验证有效性
+                </button>
+            </div>
+            <p id="baseImeiError" class="text-danger text-xs mt-1 hidden">请输入有效的15位IMEI码</p>
+            <p id="imeiValidationResult" class="text-xs mt-1 hidden"></p>
+        </div>
+
+        <!-- 生成数量控制 -->
+        <div class="mb-6">
+            <label for="count" class="block text-gray-700 mb-2">生成数量:</label>
+            <div class="flex items-center">
+                <button id="decreaseBtn" class="btn-secondary w-10 h-10 p-0 flex items-center justify-center">
+                    <i class="fa fa-minus"></i>
+                </button>
+                <input
+                        type="number"
+                        id="count"
+                        min="1"
+                        max="100"
+                        value="1"
+                        class="mx-2 border border-gray-300 rounded-lg px-4 py-2 text-center w-20 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                <button id="increaseBtn" class="btn-secondary w-10 h-10 p-0 flex items-center justify-center">
+                    <i class="fa fa-plus"></i>
+                </button>
+                <span class="ml-4 text-gray-500 text-sm">最多可生成100个</span>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="flex flex-wrap gap-4 mb-8">
+            <button id="generateBtn" class="btn-primary flex items-center">
+                <i class="fa fa-refresh mr-2"></i> 生成IMEI码
+            </button>
+            <button id="copyBtn" class="btn-secondary flex items-center" disabled>
+                <i class="fa fa-copy mr-2"></i> 复制所有
+            </button>
+            <button id="clearBtn" class="btn-secondary flex items-center" disabled>
+                <i class="fa fa-trash mr-2"></i> 清空
+            </button>
+        </div>
+
+        <!-- 结果显示区域 -->
+        <div id="resultContainer" class="border border-gray-200 rounded-lg p-4 min-h-[100px] bg-gray-50">
+            <div id="result" class="text-gray-600">
+                生成的IMEI码将显示在这里...
+            </div>
+        </div>
+
+        <!-- 通知区域 -->
+        <div id="notification" class="hidden mt-4 p-3 rounded-lg text-center"></div>
+    </section>
+
+    <!-- 关于IMEI -->
+    <section id="about" class="grid md:grid-cols-2 gap-8 mb-12">
+        <div class="bg-white rounded-xl shadow-md p-6 md:p-8 card-hover">
+            <div class="text-primary text-3xl mb-4">
+                <i class="fa fa-info-circle"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-4">什么是IMEI码？</h3>
+            <p class="text-gray-600 mb-3">
+                IMEI（国际移动设备识别码）是一个15位的唯一数字，用于识别移动电话设备。
+            </p>
+            <p class="text-gray-600">
+                每台手机、平板电脑等移动设备都有一个全球唯一的IMEI码，类似于设备的"身份证"，可用于追踪设备、验证设备合法性等。
+            </p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md p-6 md:p-8 card-hover">
+            <div class="text-primary text-3xl mb-4">
+                <i class="fa fa-check-circle"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-4">IMEI码的结构</h3>
+            <p class="text-gray-600 mb-3">
+                标准的IMEI码由15位数字组成，分为四部分：
+            </p>
+            <ul class="text-gray-600 space-y-2 list-disc pl-5">
+                <li>前6位：TAC（Type Allocation Code，类型分配码）</li>
+                <li>接下来2位：FAC（Final Assembly Code，最终装配地代码）</li>
+                <li>再接下来6位：SNR（Serial Number，序列号）</li>
+                <li>最后1位：SP（Check Digit，校验位）</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- 常见问题 -->
+    <section id="faq" class="bg-white rounded-xl shadow-md p-6 md:p-8 mb-12">
+        <h3 class="text-xl md:text-2xl font-bold mb-6 text-primary">常见问题</h3>
+
+        <div class="space-y-4">
+            <div class="border-b border-gray-100 pb-4">
+                <h4 class="font-semibold text-lg mb-2 flex items-center">
+                    <i class="fa fa-question-circle text-primary mr-2"></i>
+                    什么是TAC码和FAC码？
+                </h4>
+                <p class="text-gray-600 ml-6">
+                    TAC（Type Allocation Code）是IMEI码的前6位，由GSMA分配，用于识别设备的品牌和型号。FAC（Final Assembly
+                    Code）是接下来的2位，标识设备的最终装配地。两者共同构成了IMEI码的前8位。
+                </p>
+            </div>
+
+            <div class="border-b border-gray-100 pb-4">
+                <h4 class="font-semibold text-lg mb-2 flex items-center">
+                    <i class="fa fa-question-circle text-primary mr-2"></i>
+                    不同生成模式有什么区别？
+                </h4>
+                <p class="text-gray-600 ml-6">
+                    - 完全随机生成：TAC、FAC和序列号均随机生成<br>
+                    - 自定义TAC码：仅指定TAC码，FAC和序列号随机生成<br>
+                    - 同时自定义TAC和FAC码：指定前8位，仅序列号随机生成<br>
+                    - 基于现有IMEI码：保留原码的TAC和FAC，仅生成新序列号
+                </p>
+            </div>
+
+            <div class="border-b border-gray-100 pb-4">
+                <h4 class="font-semibold text-lg mb-2 flex items-center">
+                    <i class="fa fa-question-circle text-primary mr-2"></i>
+                    如何验证IMEI码的有效性？
+                </h4>
+                <p class="text-gray-600 ml-6">
+                    IMEI码的最后一位是校验位，通过Luhn算法计算得出。本工具生成的IMEI码都经过校验位验证，确保格式有效。您也可以使用工具中的"验证有效性"按钮检查任意IMEI码。
+                </p>
+            </div>
+
+            <div>
+                <h4 class="font-semibold text-lg mb-2 flex items-center">
+                    <i class="fa fa-question-circle text-primary mr-2"></i>
+                    生成IMEI码有什么用途？
+                </h4>
+                <p class="text-gray-600 ml-6">
+                    主要用于软件开发测试、设备管理系统测试、教学演示等合法场景。请遵守相关法律法规，不要用于非法活动。
+                </p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="bg-dark text-white py-8">
+    <div class="container mx-auto px-4">
+        <div class="text-center">
+            <div class="flex items-center justify-center space-x-2 mb-4">
+                <i class="fa fa-mobile text-2xl text-primary"></i>
+                <h2 class="text-xl font-bold">IMEI码生成器</h2>
+            </div>
+            <p class="text-gray-400 mb-6">
+                本工具仅用于合法的测试和开发目的，请勿用于非法用途
+            </p>
+            <div class="text-gray-500 text-sm">
+                &copy; 2025 IMEI码生成器 | 仅供学习和测试使用
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    mobileMenuBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    const generateModeRadios = document.querySelectorAll('input[name="generateMode"]');
+    const customTacSettings = document.getElementById('customTacSettings');
+    const customTacFacSettings = document.getElementById('customTacFacSettings');
+    const basedOnImeiSettings = document.getElementById('basedOnImeiSettings');
+
+    generateModeRadios.forEach(radio => {
+        radio.addEventListener('change', updateGenerateModeUI);
+    });
+
+    function updateGenerateModeUI() {
+        customTacSettings.classList.add('hidden');
+        customTacFacSettings.classList.add('hidden');
+        basedOnImeiSettings.classList.add('hidden');
+
+        clearErrorStates();
+
+        const selectedMode = document.querySelector('input[name="generateMode"]:checked').value;
+
+        if (selectedMode === 'customTac') {
+            customTacSettings.classList.remove('hidden');
+        } else if (selectedMode === 'customTacFac') {
+            customTacFacSettings.classList.remove('hidden');
+        } else if (selectedMode === 'basedOnImei') {
+            basedOnImeiSettings.classList.remove('hidden');
+        }
+    }
+
+    const tacModeRadios = document.querySelectorAll('input[name="tacMode"]');
+    const presetTacContainer = document.getElementById('presetTacContainer');
+    const manualTacContainer = document.getElementById('manualTacContainer');
+    const manualTacOnlyInput = document.getElementById('manualTacOnly');
+    const tacOnlyError = document.getElementById('tacOnlyError');
+
+    tacModeRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            presetTacContainer.classList.add('hidden');
+            manualTacContainer.classList.add('hidden');
+
+            manualTacOnlyInput.classList.remove('input-error');
+            tacOnlyError.classList.add('hidden');
+
+            if (radio.value === 'presetTac') {
+                presetTacContainer.classList.remove('hidden');
+            } else if (radio.value === 'manualTac') {
+                manualTacContainer.classList.remove('hidden');
+            }
+        });
+    });
+
+    const tacFacModeRadios = document.querySelectorAll('input[name="tacFacMode"]');
+    const presetTacFacContainer = document.getElementById('presetTacFacContainer');
+    const manualTacFacContainer = document.getElementById('manualTacFacContainer');
+    const manualTacInput = document.getElementById('manualTac');
+    const manualFacInput = document.getElementById('manualFac');
+    const tacError = document.getElementById('tacError');
+    const facError = document.getElementById('facError');
+
+    tacFacModeRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            presetTacFacContainer.classList.add('hidden');
+            manualTacFacContainer.classList.add('hidden');
+
+            manualTacInput.classList.remove('input-error');
+            manualFacInput.classList.remove('input-error');
+            tacError.classList.add('hidden');
+            facError.classList.add('hidden');
+
+            if (radio.value === 'presetTacFac') {
+                presetTacFacContainer.classList.remove('hidden');
+            } else if (radio.value === 'manualTacFac') {
+                manualTacFacContainer.classList.remove('hidden');
+            }
+        });
+    });
+
+    manualTacOnlyInput.addEventListener('input', () => {
+        manualTacOnlyInput.value = manualTacOnlyInput.value.replace(/[^0-9]/g, '');
+
+        validateTacOnlyInput();
+    });
+
+    manualTacInput.addEventListener('input', () => {
+        manualTacInput.value = manualTacInput.value.replace(/[^0-9]/g, '');
+
+        validateTacInput();
+    });
+
+    manualFacInput.addEventListener('input', () => {
+        manualFacInput.value = manualFacInput.value.replace(/[^0-9]/g, '');
+
+        validateFacInput();
+    });
+
+    const baseImeiInput = document.getElementById('baseImei');
+    const validateImeiBtn = document.getElementById('validateImeiBtn');
+    const baseImeiError = document.getElementById('baseImeiError');
+    const imeiValidationResult = document.getElementById('imeiValidationResult');
+
+    baseImeiInput.addEventListener('input', () => {
+        baseImeiInput.value = baseImeiInput.value.replace(/[^0-9\s]/g, '');
+
+        imeiValidationResult.classList.add('hidden');
+        baseImeiInput.classList.remove('input-error', 'validation-success');
+        baseImeiError.classList.add('hidden');
+    });
+
+    validateImeiBtn.addEventListener('click', () => {
+        const imei = sanitizeImei(baseImeiInput.value);
+
+        if (imei.length !== 15) {
+            showImeiValidationResult(false, 'IMEI码必须是15位数字');
+            return;
+        }
+
+        const isValid = validateImeiCheckDigit(imei);
+        if (isValid) {
+            showImeiValidationResult(true, 'IMEI码有效');
+        } else {
+            showImeiValidationResult(false, 'IMEI码无效，校验位不正确');
+        }
+    });
+
+    function showImeiValidationResult(isValid, message) {
+        imeiValidationResult.textContent = message;
+        imeiValidationResult.classList.remove('hidden', 'validation-success', 'validation-error');
+        imeiValidationResult.classList.add(isValid ? 'validation-success' : 'validation-error');
+
+        baseImeiInput.classList.remove('input-error', 'validation-success');
+        baseImeiInput.classList.add(isValid ? 'validation-success' : 'input-error');
+        baseImeiError.classList.add('hidden');
+    }
+
+    const countInput = document.getElementById('count');
+    const decreaseBtn = document.getElementById('decreaseBtn');
+    const increaseBtn = document.getElementById('increaseBtn');
+
+    decreaseBtn.addEventListener('click', () => {
+        let count = parseInt(countInput.value);
+        if (count > 1) {
+            countInput.value = count - 1;
+        }
+    });
+
+    increaseBtn.addEventListener('click', () => {
+        let count = parseInt(countInput.value);
+        if (count < 100) {
+            countInput.value = count + 1;
+        }
+    });
+
+    const generateBtn = document.getElementById('generateBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const result = document.getElementById('result');
+    const notification = document.getElementById('notification');
+    const presetTacSelect = document.getElementById('presetTac');
+    const presetTacFacSelect = document.getElementById('presetTacFac');
+
+    function getRandomNumber(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function calculateCheckDigit(number) {
+        let sum = 0;
+        let alternate = false;
+
+        for (let i = number.length - 1; i >= 0; i--) {
+            let n = parseInt(number.charAt(i));
+
+            if (alternate) {
+                n *= 2;
+                if (n > 9) {
+                    n = (n % 10) + 1;
+                }
+            }
+
+            sum += n;
+            alternate = !alternate;
+        }
+
+        const checkDigit = (10 - (sum % 10)) % 10;
+        return checkDigit.toString();
+    }
+
+    function validateImeiCheckDigit(imei) {
+        if (imei.length !== 15) return false;
+
+        const first14 = imei.substring(0, 14);
+        const checkDigit = imei.substring(14, 15);
+
+        return calculateCheckDigit(first14) === checkDigit;
+    }
+
+    function sanitizeImei(imei) {
+        return imei.replace(/\s+/g, '').replace(/[^0-9]/g, '');
+    }
+
+    function getSelectedTac() {
+        const tacMode = document.querySelector('input[name="tacMode"]:checked').value;
+
+        if (tacMode === 'presetTac') {
+            return presetTacSelect.value;
+        } else {
+            return manualTacOnlyInput.value;
+        }
+    }
+
+    function getSelectedTacFac() {
+        const tacFacMode = document.querySelector('input[name="tacFacMode"]:checked').value;
+
+        if (tacFacMode === 'presetTacFac') {
+            return presetTacFacSelect.value;
+        } else {
+            return manualTacInput.value + manualFacInput.value;
+        }
+    }
+
+    function generateRandomFac() {
+        let fac = '';
+        for (let i = 0; i < 2; i++) {
+            fac += getRandomNumber(0, 9).toString();
+        }
+        return fac;
+    }
+
+    function generateRandomAllIMEI() {
+        let tac = '';
+        for (let i = 0; i < 6; i++) {
+            tac += getRandomNumber(0, 9).toString();
+        }
+
+        const fac = generateRandomFac();
+
+        return generateImeiFromTacFac(tac, fac);
+    }
+
+    function generateCustomTacIMEI() {
+        const tac = getSelectedTac();
+        const fac = generateRandomFac();
+
+        return generateImeiFromTacFac(tac, fac);
+    }
+
+    function generateCustomTacFacIMEI() {
+        const tacFac = getSelectedTacFac();
+        const tac = tacFac.substring(0, 6);
+        const fac = tacFac.substring(6, 8);
+
+        return generateImeiFromTacFac(tac, fac);
+    }
+
+    function generateImeiFromTacFac(tac, fac) {
+        let snr = '';
+        for (let i = 0; i < 6; i++) {
+            snr += getRandomNumber(0, 9).toString();
+        }
+
+        const first14 = tac + fac + snr;
+
+        const checkDigit = calculateCheckDigit(first14);
+
+        const imei = first14 + checkDigit;
+
+        return formatImei(imei);
+    }
+
+    function generateBasedOnImeiIMEI(baseImei) {
+        const tac = baseImei.substring(0, 6);
+        const fac = baseImei.substring(6, 8);
+
+        let snr = '';
+        for (let i = 0; i < 6; i++) {
+            snr += getRandomNumber(0, 9).toString();
+        }
+
+        const first14 = tac + fac + snr;
+
+        const checkDigit = calculateCheckDigit(first14);
+
+        const imei = first14 + checkDigit;
+
+        return formatImei(imei);
+    }
+
+    function formatImei(imei) {
+        return imei.replace(/(\d{4})/g, '$1 ').trim();
+    }
+
+    function generateMultipleIMEIs(count) {
+        const imeis = [];
+        const generateMode = document.querySelector('input[name="generateMode"]:checked').value;
+
+        if (generateMode === 'basedOnImei') {
+            const baseImei = sanitizeImei(baseImeiInput.value);
+            for (let i = 0; i < count; i++) {
+                imeis.push(generateBasedOnImeiIMEI(baseImei));
+            }
+        } else if (generateMode === 'customTac') {
+            for (let i = 0; i < count; i++) {
+                imeis.push(generateCustomTacIMEI());
+            }
+        } else if (generateMode === 'customTacFac') {
+            for (let i = 0; i < count; i++) {
+                imeis.push(generateCustomTacFacIMEI());
+            }
+        } else {
+            for (let i = 0; i < count; i++) {
+                imeis.push(generateRandomAllIMEI());
+            }
+        }
+
+        return imeis;
+    }
+
+    function validateInputs() {
+        const generateMode = document.querySelector('input[name="generateMode"]:checked').value;
+
+        clearErrorStates();
+
+        const count = parseInt(countInput.value);
+        if (isNaN(count) || count < 1 || count > 100) {
+            showNotification('请输入有效的生成数量 (1-100)', 'error');
+            return false;
+        }
+
+        if (generateMode === 'customTac' && document.querySelector('input[name="tacMode"][value="manualTac"]:checked')) {
+            if (!validateTacOnlyInput()) {
+                showNotification('请输入有效的6位数字TAC码', 'error');
+                return false;
+            }
+        } else if (generateMode === 'customTacFac' && document.querySelector('input[name="tacFacMode"][value="manualTacFac"]:checked')) {
+            const isTacValid = validateTacInput();
+            const isFacValid = validateFacInput();
+
+            if (!isTacValid || !isFacValid) {
+                showNotification('请输入有效的TAC和FAC码', 'error');
+                return false;
+            }
+        } else if (generateMode === 'basedOnImei') {
+            const baseImei = sanitizeImei(baseImeiInput.value);
+            if (baseImei.length !== 15) {
+                baseImeiInput.classList.add('input-error');
+                baseImeiError.classList.remove('hidden');
+                showNotification('请输入有效的15位IMEI码', 'error');
+                return false;
+            }
+
+            if (!validateImeiCheckDigit(baseImei)) {
+                baseImeiInput.classList.add('input-error');
+                baseImeiError.classList.remove('hidden');
+                showNotification('输入的IMEI码无效，请检查后重试', 'error');
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function validateTacOnlyInput() {
+        if (manualTacOnlyInput.value.length !== 6 || !/^\d{6}$/.test(manualTacOnlyInput.value)) {
+            manualTacOnlyInput.classList.add('input-error');
+            tacOnlyError.classList.remove('hidden');
+            return false;
+        }
+
+        manualTacOnlyInput.classList.remove('input-error');
+        tacOnlyError.classList.add('hidden');
+        return true;
+    }
+
+    function validateTacInput() {
+        if (manualTacInput.value.length !== 6 || !/^\d{6}$/.test(manualTacInput.value)) {
+            manualTacInput.classList.add('input-error');
+            tacError.classList.remove('hidden');
+            return false;
+        }
+
+        manualTacInput.classList.remove('input-error');
+        tacError.classList.add('hidden');
+        return true;
+    }
+
+    function validateFacInput() {
+        if (manualFacInput.value.length !== 2 || !/^\d{2}$/.test(manualFacInput.value)) {
+            manualFacInput.classList.add('input-error');
+            facError.classList.remove('hidden');
+            return false;
+        }
+
+        manualFacInput.classList.remove('input-error');
+        facError.classList.add('hidden');
+        return true;
+    }
+
+    function clearErrorStates() {
+        manualTacOnlyInput.classList.remove('input-error');
+        tacOnlyError.classList.add('hidden');
+
+        manualTacInput.classList.remove('input-error');
+        manualFacInput.classList.remove('input-error');
+        tacError.classList.add('hidden');
+        facError.classList.add('hidden');
+
+        baseImeiInput.classList.remove('input-error', 'validation-success');
+        baseImeiError.classList.add('hidden');
+        imeiValidationResult.classList.add('hidden');
+    }
+
+    function displayResults(imeis) {
+        if (imeis.length === 1) {
+            result.innerHTML = `<div class="p-2 rounded bg-gray-100 mb-2">${imeis[0]}</div>`;
+        } else {
+            let html = '';
+            imeis.forEach((imei, index) => {
+                html += `<div class="p-2 rounded bg-gray-100 mb-2 flex items-center">
+                    <span class="w-8 text-gray-500 mr-2">${index + 1}.</span>
+                    <span>${imei}</span>
+                  </div>`;
+            });
+            result.innerHTML = html;
+        }
+
+        copyBtn.disabled = false;
+        clearBtn.disabled = false;
+        copyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        clearBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+
+    function showNotification(message, type = 'success') {
+        notification.textContent = message;
+        notification.classList.remove('hidden', 'bg-success/20', 'text-success', 'bg-warning/20', 'text-warning', 'bg-danger/20', 'text-danger');
+
+        if (type === 'success') {
+            notification.classList.add('bg-success/20', 'text-success');
+        } else if (type === 'warning') {
+            notification.classList.add('bg-warning/20', 'text-warning');
+        } else {
+            notification.classList.add('bg-danger/20', 'text-danger');
+        }
+
+        setTimeout(() => {
+            notification.classList.add('hidden');
+        }, 3000);
+    }
+
+    generateBtn.addEventListener('click', () => {
+        if (!validateInputs()) {
+            return;
+        }
+
+        const count = parseInt(countInput.value);
+
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 生成中...';
+
+        setTimeout(() => {
+            const imeis = generateMultipleIMEIs(count);
+            displayResults(imeis);
+
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<i class="fa fa-refresh mr-2"></i> 生成IMEI码';
+
+            showNotification(`成功生成 ${count} 个IMEI码`);
+        }, 500);
+    });
+
+    copyBtn.addEventListener('click', () => {
+        let textToCopy = '';
+        const elements = result.querySelectorAll('div');
+
+        elements.forEach(el => {
+            let text = el.textContent.replace(/^\d+\.\s*/, '').trim();
+            text = text.replace(/\s+/g, '');
+            textToCopy += text + '\n';
+        });
+
+        navigator.clipboard.writeText(textToCopy.trim())
+            .then(() => {
+                showNotification('已复制到剪贴板');
+            })
+            .catch(err => {
+                showNotification('复制失败，请手动复制', 'error');
+                console.error('复制失败:', err);
+            });
+    });
+
+    clearBtn.addEventListener('click', () => {
+        result.innerHTML = '生成的IMEI码将显示在这里...';
+        copyBtn.disabled = true;
+        clearBtn.disabled = true;
+        copyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        clearBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        showNotification('已清空结果');
+    });
+
+    window.addEventListener('scroll', () => {
+        const header = document.querySelector('header');
+        if (window.scrollY > 10) {
+            header.classList.add('py-2', 'shadow');
+            header.classList.remove('py-4');
+        } else {
+            header.classList.add('py-4');
+            header.classList.remove('py-2', 'shadow');
+        }
+    });
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+
+            if (targetElement) {
+                window.scrollTo({
+                    top: targetElement.offsetTop - 80,
+                    behavior: 'smooth'
+                });
+
+                if (!mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.add('hidden');
+                }
+            }
+        });
+    });
+
+    window.addEventListener('load', () => {
+        updateGenerateModeUI();
+
+        setTimeout(() => {
+            generateBtn.click();
+        }, 500);
+    });
+</script>
+</body>
+</html>
